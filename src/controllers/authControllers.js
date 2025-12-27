@@ -65,12 +65,26 @@ const VerifyOTP = async (req,res)=>{
         if(!otp) return res.status(401).json(`You must provide otp`)
 
             // look for existing otp in db
-            const existingOtp = await authModel.find({otp})
+            const existingOtp = await authModel.findOne({otp})
             // if otp doesn't exist in db return error
             if(!existingOtp) return res.status(401).json(`Sorry the otp provided does not exist`)
 
                 // get current time
                 const currentTime = new Date(Date.now())
+
+                console.log(currentTime)
+
+                // check if otp is expired return error
+                 if(currentTime > existingOtp.otpExpiretime) return res.status(401).json(`Sorry the otp has expired`)
+
+                    // change vlues of otp,otp expired time, is verified in mongodb
+                    existingOtp.otp = null
+                    existingOtp.otpExpiretime = null
+                    existingOtp.isVerified = true
+
+                    // save changed values to db
+                    existingOtp.save()
+
 
 
        // all ok
