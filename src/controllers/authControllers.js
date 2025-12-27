@@ -96,8 +96,42 @@ const VerifyOTP = async (req,res)=>{
     }
 }
 
+// resend otp controller 
+const resendOTP = async (req,res)=>{
+    try{
+        // get data from client
+        const {email} = req.body
+        // if email not present return error
+        if(!email) return res.status(401).json(`you must provide email`)
+        // check for user in db
+        const existingUser = await authModel.findOne({email})
+        // if existing user doesn't exist return error
+        if(!existingUser) return res.status(401).json('sorry user not found')
+
+            // generate otp
+            const otp = generateOTP()
+            // send mail
+            sendMail(email,'OTP-Verification',otpTemplate(existingUser.userName,otp))
+
+            // change values in db
+            existingUser.otp = otp
+            existingUser.otpExpiretime = otpExpiryTime()
+            
+
+            // save new values in db
+            existingUser.save()
+
+       // all ok
+        res.status(200).json(`OTP sent to ${email}`)
+    }catch(err){
+        console.log(err)
+        res.status(500).json(`Internal server error : ${err}`)
+    }
+}
+
 // exports
 module.exports ={
     registration,
     VerifyOTP,
+    resendOTP,
 }
